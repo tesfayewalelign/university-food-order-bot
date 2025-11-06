@@ -1,17 +1,19 @@
-import { Order } from "../models/orderModel.js";
+import { supabase } from "../database.js";
 
-export const OrderService = {
-  async createOrder(userId: number, username: string, mealType: string) {
-    const order = new Order({ userId, username, mealType });
-    await order.save();
-    return order;
-  },
+export async function addOrder(userId: number, food: string) {
+  const { error } = await supabase
+    .from("orders")
+    .insert([{ user_id: userId, food }]);
+  if (error) throw error;
+  return "✅ Order added successfully!";
+}
 
-  async getAllOrders() {
-    return Order.find().sort({ createdAt: -1 });
-  },
-
-  async setOrderStatus(orderId: string, status: string) {
-    return Order.findByIdAndUpdate(orderId, { status }, { new: true });
-  },
-};
+export async function listOrders(userId: number) {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("user_id", userId);
+  if (error) throw error;
+  if (!data || data.length === 0) return "You have no orders yet!";
+  return data.map((o) => `🍽️ ${o.food}`).join("\n");
+}
